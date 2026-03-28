@@ -84,35 +84,6 @@ export default function MapView({ senderPos, destinationPos }) {
     };
   }, []);
 
-  // 2. Immediately draw a straight dashed line as a placeholder
-  const drawStraightLine = useCallback(() => {
-    const map = mapRef.current;
-    if (!map || !senderPos || !destinationPos) return;
-
-    const coords = [
-      [senderPos.lat, senderPos.lng],
-      [destinationPos.lat, destinationPos.lng],
-    ];
-
-    // Only draw if no real route exists
-    if (!routeRef.current) {
-      if (glowRef.current) map.removeLayer(glowRef.current);
-      glowRef.current = L.polyline(coords, {
-        color: '#4da6ff',
-        weight: 8,
-        opacity: 0.1,
-        lineJoin: 'round',
-      }).addTo(map);
-
-      routeRef.current = L.polyline(coords, {
-        color: '#4da6ff',
-        weight: 3,
-        opacity: 0.6,
-        dashArray: '10, 14',
-        lineJoin: 'round',
-      }).addTo(map);
-    }
-  }, [senderPos, destinationPos]);
 
   // 3. Update sender arrow marker
   useEffect(() => {
@@ -130,7 +101,7 @@ export default function MapView({ senderPos, destinationPos }) {
       senderRef.current.setIcon(icon);
     }
 
-  }, [senderPos, destinationPos, drawStraightLine]);
+  }, [senderPos, destinationPos]);
 
   // 4. Update destination marker
   useEffect(() => {
@@ -147,23 +118,30 @@ export default function MapView({ senderPos, destinationPos }) {
   }, [destinationPos]);
 
   // 5. Fetch and draw actual driving route
+
+  // Store the latest positions to prevent dependency changes causing constant aborts
+  const latestPos = useRef({ senderPos, destinationPos });
+  latestPos.current = { senderPos, destinationPos };
+
+  // Create a primitive routing key that changes only when they move > 100m
+  const currentRouteKey = (senderPos && destinationPos) 
+    ? `${senderPos.lat.toFixed(3)},${senderPos.lng.toFixed(3)}-${destinationPos.lat.toFixed(3)},${destinationPos.lng.toFixed(3)}`
+    : null;
+
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !senderPos || !destinationPos) return;
-
-    // Immediately draw the straight dashed line as a fallback
-    // In case OSRM routing fails (e.g. across an ocean), this bird-flight line will remain.
-    drawStraightLine();
-
-    const key = `${senderPos.lat.toFixed(3)},${senderPos.lng.toFixed(3)}-${destinationPos.lat.toFixed(3)},${destinationPos.lng.toFixed(3)}`;
-    if (key === lastRouteKey.current) return;
-    lastRouteKey.current = key;
+    if (!map || !currentRouteKey) return;
+    
+    // Ignore if identical key
+    if (currentRouteKey === lastRouteKey.current) return;
+    lastRouteKey.current = currentRouteKey;
 
     const controller = new AbortController();
 
     const fetchRoute = async () => {
       try {
-        const url = `https://router.project-osrm.org/route/v1/driving/${senderPos.lng},${senderPos.lat};${destinationPos.lng},${destinationPos.lat}?overview=full&geometries=geojson`;
+        const { senderPos: sp, destinationPos: dp } = latestPos.current;
+        const url = `https://router.project-osrm.org/route/v1/driving/${sp.lng},${sp.lat};${dp.lng},${dp.lat}?overview=full&geometries=geojson`;
         const res = await fetch(url, { signal: controller.signal });
         const data = await res.json();
 
@@ -198,13 +176,12 @@ export default function MapView({ senderPos, destinationPos }) {
       }
     };
 
-    // Small delay to avoid spamming
-    const timer = setTimeout(fetchRoute, 800);
+    const timer = setTimeout(fetchRoute, 500);
     return () => {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [senderPos, destinationPos]);
+  }, [currentRouteKey]);
 
   return (
     <div className="map-container">
