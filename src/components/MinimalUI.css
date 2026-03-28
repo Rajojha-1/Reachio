@@ -1,0 +1,72 @@
+.minimal-ui {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  z-index: 2000;
+  pointer-events: none;
+  animation: fadeIn 0.4s ease;
+}
+
+.minimal-distance {
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.6);
+  letter-spacing: -0.03em;
+}
+
+.minimal-arrow {
+  color: #4da6ff;
+  filter: drop-shadow(0 2px 8px rgba(77, 166, 255, 0.4));
+  transition: transform 0.5s ease;
+}
+
+.minimal-eta {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.5);
+}
+
+.minimal-status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-top: 4px;
+}
+
+.minimal-status-dot.status-far {
+  background: #ff6b35;
+  box-shadow: 0 0 12px rgba(255, 107, 53, 0.5);
+}
+
+.minimal-status-dot.status-approaching {
+  background: #f7c948;
+  box-shadow: 0 0 12px rgba(247, 201, 72, 0.5);
+}
+
+.minimal-status-dot.status-arriving {
+  background: #4da6ff;
+  box-shadow: 0 0 12px rgba(77, 166, 255, 0.5);
+  animation: pulse 1.5s infinite;
+}
+
+.minimal-status-dot.status-reached {
+  background: #2ecc71;
+  box-shadow: 0 0 12px rgba(46, 204, 113, 0.5);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.4); }
+}
