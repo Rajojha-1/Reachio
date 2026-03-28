@@ -151,6 +151,10 @@ export default function MapView({ senderPos, destinationPos }) {
     const map = mapRef.current;
     if (!map || !senderPos || !destinationPos) return;
 
+    // Immediately draw the straight dashed line as a fallback
+    // In case OSRM routing fails (e.g. across an ocean), this bird-flight line will remain.
+    drawStraightLine();
+
     const key = `${senderPos.lat.toFixed(3)},${senderPos.lng.toFixed(3)}-${destinationPos.lat.toFixed(3)},${destinationPos.lng.toFixed(3)}`;
     if (key === lastRouteKey.current) return;
     lastRouteKey.current = key;
