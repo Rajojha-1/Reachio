@@ -21,20 +21,30 @@ export function useGeolocation(sessionId, role = 'sender', status = 'far', activ
   const watchIdRef = useRef(null);
   const intervalRef = useRef(null);
   const lastSendRef = useRef(0);
+  const lastMovedRef = useRef(Date.now());
 
   const sendLocation = useCallback(
     async (lat, lng, speed) => {
       if (!sessionId) return;
 
-      const point = { lat, lng, timestamp: Date.now(), speed };
+      // Update lastMovedRef if speed is > 0.5 m/s (~1.8 km/h)
+      if (speed && speed > 0.5) {
+        lastMovedRef.current = Date.now();
+      }
+
+      const point = { lat, lng, timestamp: Date.now(), speed, lastMovedAt: lastMovedRef.current };
       bufferLocation(point);
 
       if (isOnline()) {
         try {
-          const updateFn = role === 'sender' ? updateLocation : updateDestinationLocation;
-          await updateFn(sessionId, lat, lng, speed);
+          if (role === 'sender') {
+            await updateLocation(sessionId, lat, lng, speed, lastMovedRef.current);
+          } else {
+            await updateDestinationLocation(sessionId, lat, lng);
+          }
           // Also flush any buffered points
-          await flushBuffer(sessionId, updateFn);
+          const flushUpdateFn = role === 'sender' ? updateLocation : updateDestinationLocation;
+          await flushBuffer(sessionId, flushUpdateFn);
         } catch (e) {
           console.warn('Failed to send location:', e);
         }

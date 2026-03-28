@@ -20,6 +20,7 @@ export default function Track() {
   const { session, loading, error } = useFirebaseSession(sessionId);
   const [smoothedDistance, setSmoothedDistance] = useState(null);
   const [online, setOnline] = useState(navigator.onLine);
+  const [now, setNow] = useState(Date.now());
   const prevDistRef = useRef(null);
 
   // Determine role based on who created the session
@@ -28,15 +29,20 @@ export default function Track() {
   // Start broadcasting our own location (if sender, updates sender; if receiver, updates destination)
   const { position: myLivePos, error: geoError, isTracking } = useGeolocation(sessionId, role, 'far', true);
 
-  // Track online/offline status
+  // Track online/offline status and current time for idle calculations
   useEffect(() => {
     const handleOnline = () => setOnline(true);
     const handleOffline = () => setOnline(false);
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+    
+    // Update 'now' every 30 seconds to recalculate idle time
+    const timeInterval = setInterval(() => setNow(Date.now()), 30000);
+
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      clearInterval(timeInterval);
     };
   }, []);
 
@@ -92,6 +98,12 @@ export default function Track() {
 
   const isWaitingForReceiver = role === 'sender' && !session?.destination;
 
+  // Calculate if sender is stationary for > 5 mins
+  const lastMovedAt = session?.sender?.lastMovedAt || session?.sender?.timestamp || now;
+  const idleTimeMs = now - lastMovedAt;
+  const idleMins = Math.floor(idleTimeMs / 60000);
+  const isStationaryLong = idleMins >= 5 && (session?.sender?.speed || 0) < 0.5;
+
   return (
     <div className="track">
       {/* Map layer */}
@@ -105,6 +117,11 @@ export default function Track() {
         {!online && (
           <div className="offline-banner">
             <span>📡</span> Offline — Showing last known position
+          </div>
+        )}
+        {online && isStationaryLong && !isWaitingForReceiver && status !== 'reached' && (
+          <div className="offline-banner" style={{ background: 'rgba(230, 162, 60, 0.9)' }}>
+            <span>⏱️</span> Sender has been stationary for {idleMins} mins
           </div>
         )}
       </div>

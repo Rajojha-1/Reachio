@@ -41,16 +41,23 @@ export async function createSession(senderLat, senderLng) {
 /**
  * Update sender's live location in the session.
  */
-export async function updateLocation(sessionId, lat, lng, speed = 0) {
+export async function updateLocation(sessionId, lat, lng, speed = 0, lastMovedAt = null) {
   const sessionRef = ref(db, `sessions/${sessionId}/sender`);
-  // Use set instead of update because if sender was missing entirely it creates it,
-  // but update is fine since we create it initially.
-  await update(sessionRef, {
+  
+  const data = {
     lat,
     lng,
     timestamp: Date.now(),
     speed,
-  });
+  };
+
+  if (lastMovedAt !== null) {
+    data.lastMovedAt = lastMovedAt;
+  }
+
+  // Use set instead of update because if sender was missing entirely it creates it,
+  // but update is fine since we create it initially.
+  await update(sessionRef, data);
 }
 
 /**

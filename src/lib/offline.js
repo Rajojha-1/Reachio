@@ -46,7 +46,7 @@ export async function flushBuffer(sessionId, updateFn) {
   try {
     // Send only the latest point (most relevant)
     const latest = buffer[buffer.length - 1];
-    await updateFn(sessionId, latest.lat, latest.lng, latest.speed || 0);
+    await updateFn(sessionId, latest.lat, latest.lng, latest.speed || 0, latest.lastMovedAt || null);
     clearBuffer();
   } catch (e) {
     console.warn('Failed to flush buffer:', e);
