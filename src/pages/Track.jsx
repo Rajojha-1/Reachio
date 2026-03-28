@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useFirebaseSession } from '../hooks/useFirebaseSession';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { useETA } from '../hooks/useETA';
+import { formatSpeed } from '../lib/eta';
 import { haversineDistance, smoothValue, formatDistance } from '../lib/distance';
 import { getStatus } from '../lib/status';
 import { isOnline } from '../lib/offline';
@@ -130,6 +131,7 @@ export default function Track() {
         <BottomPanel
           distance={distanceText}
           etaText={etaText}
+          speedText={formatSpeed(session?.sender?.speed || 0)}
           status={status}
           isOnline={online}
         />

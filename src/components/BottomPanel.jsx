@@ -9,6 +9,7 @@ import './BottomPanel.css';
 export default function BottomPanel({
   distance,
   etaText,
+  speedText,
   status,
   isOnline,
 }) {
@@ -32,6 +33,11 @@ export default function BottomPanel({
         <div className="metric">
           <span className="metric-value">{etaText}</span>
           <span className="metric-label">ETA</span>
+        </div>
+        <div className="metric-divider" />
+        <div className="metric">
+          <span className="metric-value">{speedText}</span>
+          <span className="metric-label">Speed</span>
         </div>
       </div>
 
