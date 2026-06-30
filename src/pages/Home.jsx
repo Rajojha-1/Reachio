@@ -94,8 +94,8 @@ export default function Home() {
       {/* ── Split Hero Section ── */}
       <div className="hero-split">
         
-        {/* Left Column: Visual and Explanatory text */}
-        <section className="hero-left">
+        {/* Header container: Eyebrow and Main Title */}
+        <header className="hero-header-section">
           <div className="hero-eyebrow">
             <span className="eyebrow-icon">⚡</span>
             Real-time Peer-to-Peer location sharing
@@ -104,7 +104,10 @@ export default function Home() {
             Know exactly when<br />
             <span className="hero-gradient">they'll arrive.</span>
           </h1>
-          
+        </header>
+
+        {/* Left Column: Explanatory text */}
+        <section className="hero-left">
           <div className="p2p-explanation">
             <div className="explain-item">
               <div className="explain-num">01</div>
