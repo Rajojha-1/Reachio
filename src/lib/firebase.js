@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, set, onValue, update, get } from 'firebase/database';
+import { getDatabase, ref, set, onValue, update, get, remove } from 'firebase/database';
 import { nanoid } from 'nanoid';
 
 const firebaseConfig = {
@@ -15,26 +15,73 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
+const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const RATE_LIMIT_KEY = 'reachio_session_timestamps';
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+
+/**
+ * Check if the user has exceeded the session creation rate limit.
+ * @returns {boolean} true if rate limited
+ */
+function isRateLimited() {
+  try {
+    const raw = localStorage.getItem(RATE_LIMIT_KEY);
+    const timestamps = raw ? JSON.parse(raw) : [];
+    const now = Date.now();
+    const recent = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+    return recent.length >= RATE_LIMIT_MAX;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Record a session creation timestamp for rate limiting.
+ */
+function recordSessionCreation() {
+  try {
+    const raw = localStorage.getItem(RATE_LIMIT_KEY);
+    const timestamps = raw ? JSON.parse(raw) : [];
+    const now = Date.now();
+    const recent = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+    recent.push(now);
+    localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify(recent));
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
 /**
  * Create a new tracking session (sender only).
+ * Includes rate limiting and a 24-hour TTL.
  * Returns the session ID.
+ * @throws {Error} If rate limited
  */
 export async function createSession(senderLat, senderLng) {
+  if (isRateLimited()) {
+    throw new Error('Rate limit exceeded. You can create up to 5 sessions per hour.');
+  }
+
   const sessionId = nanoid(10);
   const sessionRef = ref(db, `sessions/${sessionId}`);
+  const now = Date.now();
   await set(sessionRef, {
-    createdAt: Date.now(),
+    createdAt: now,
+    expiresAt: now + SESSION_TTL_MS,
     sender: {
       lat: senderLat,
       lng: senderLng,
-      timestamp: Date.now(),
+      timestamp: now,
       speed: 0,
     },
-    destination: null, // Will be set when receiver joins
+    destination: null,
     eta: null,
     status: 'far',
     active: true,
   });
+
+  recordSessionCreation();
   return sessionId;
 }
 
@@ -110,4 +157,32 @@ export async function endSession(sessionId) {
   await update(sessionRef, { active: false });
 }
 
-export { db };
+/**
+ * Check if a session has expired based on its TTL.
+ * @param {object} sessionData - The session data from Firebase
+ * @returns {boolean} true if expired
+ */
+export function isSessionExpired(sessionData) {
+  if (!sessionData) return true;
+  if (sessionData.expiresAt && Date.now() > sessionData.expiresAt) return true;
+  // Fallback: if no expiresAt field, expire after 24h from createdAt
+  if (!sessionData.expiresAt && sessionData.createdAt) {
+    return Date.now() - sessionData.createdAt > SESSION_TTL_MS;
+  }
+  return false;
+}
+
+/**
+ * Delete an expired session from Firebase.
+ * Called opportunistically when a client discovers an expired session.
+ */
+export async function cleanupExpiredSession(sessionId) {
+  try {
+    const sessionRef = ref(db, `sessions/${sessionId}`);
+    await remove(sessionRef);
+  } catch (e) {
+    console.warn('Failed to cleanup expired session:', e);
+  }
+}
+
+export { db, SESSION_TTL_MS };

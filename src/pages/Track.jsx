@@ -7,6 +7,7 @@ import { formatSpeed } from '../lib/eta';
 import { haversineDistance, smoothValue, formatDistance } from '../lib/distance';
 import { getStatus } from '../lib/status';
 import { isOnline } from '../lib/offline';
+import { endSession } from '../lib/firebase';
 import MapView from '../components/Map';
 import BottomPanel from '../components/BottomPanel';
 import './Track.css';
@@ -46,6 +47,19 @@ export default function Track() {
     };
   }, []);
 
+  // End session on page unload (sender only)
+  useEffect(() => {
+    if (role !== 'sender' || !sessionId) return;
+
+    const handleUnload = () => {
+      // Use sendBeacon for reliable delivery during unload
+      endSession(sessionId).catch(() => {});
+    };
+
+    window.addEventListener('beforeunload', handleUnload);
+    return () => window.removeEventListener('beforeunload', handleUnload);
+  }, [role, sessionId]);
+
   const senderPos = session?.sender
     ? { lat: session.sender.lat, lng: session.sender.lng }
     : (role === 'sender' && myLivePos ? myLivePos : null);
@@ -68,6 +82,17 @@ export default function Track() {
 
   const status = smoothedDistance !== null ? getStatus(smoothedDistance) : 'far';
   const distanceText = smoothedDistance !== null ? formatDistance(smoothedDistance) : '--';
+
+  // Auto-end session 2 minutes after reaching destination
+  useEffect(() => {
+    if (status !== 'reached' || role !== 'sender' || !sessionId) return;
+
+    const timeout = setTimeout(() => {
+      endSession(sessionId).catch(console.warn);
+    }, 2 * 60 * 1000); // 2 minutes
+
+    return () => clearTimeout(timeout);
+  }, [status, role, sessionId]);
 
   const { etaText } = useETA(
     senderPos,
