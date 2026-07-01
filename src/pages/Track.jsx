@@ -314,16 +314,18 @@ export default function Track() {
       )}
 
       {/* Chat toggle bubble */}
-      <button 
-        className={`chat-trigger ${chatOpen ? 'open' : ''}`}
-        onClick={() => setChatOpen(!chatOpen)}
-        title="Open chat"
-      >
-        <span>💬</span>
-        {session?.messages && Object.keys(session.messages).length > lastMessageCountRef.current && (
-          <span className="chat-badge" />
-        )}
-      </button>
+      {!chatOpen && (
+        <button 
+          className="chat-trigger"
+          onClick={() => setChatOpen(true)}
+          title="Open chat"
+        >
+          <span>💬</span>
+          {session?.messages && Object.keys(session.messages).length > lastMessageCountRef.current && (
+            <span className="chat-badge" />
+          )}
+        </button>
+      )}
 
       {/* In-App Messaging Overlay Panel */}
       {chatOpen && (
