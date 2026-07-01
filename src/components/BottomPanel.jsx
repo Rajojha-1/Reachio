@@ -16,6 +16,9 @@ export default function BottomPanel({
   transitMode = 'driving',
   onTransitModeChange,
   onPing,
+  chatOpen,
+  onChatOpen,
+  hasNewMessages,
 }) {
   const updateFreq = getUpdateFrequencyLabel(status);
   const lastUpdate = getLastUpdateAge();
