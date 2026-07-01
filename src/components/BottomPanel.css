@@ -209,6 +209,36 @@
 }
 
 @media (max-width: 480px) {
+  .panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .panel-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+
+  .transit-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 1.05rem;
+  }
+
+  .transit-indicator {
+    font-size: 0.72rem;
+    padding: 5px 10px;
+  }
+
+  .btn-ping {
+    padding: 6px 12px;
+    font-size: 0.78rem;
+  }
+
   .panel-metrics {
     gap: 8px;
   }
