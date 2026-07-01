@@ -25,7 +25,14 @@ export default function BottomPanel({
       <div className="panel-handle" />
 
       <div className="panel-header">
-        <StatusBadge status={status} />
+        <div className="status-row-container">
+          <StatusBadge status={status} />
+          {!chatOpen && (
+            <button className="btn-chat-trigger" onClick={onChatOpen} title="Open chat">
+              💬 Chat {hasNewMessages && <span className="chat-badge-dot" />}
+            </button>
+          )}
+        </div>
         
         <div className="panel-controls">
           {/* Transit Mode Selector */}

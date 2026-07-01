@@ -313,20 +313,6 @@ export default function Track() {
         </div>
       )}
 
-      {/* Chat toggle bubble */}
-      {!chatOpen && (
-        <button 
-          className="chat-trigger"
-          onClick={() => setChatOpen(true)}
-          title="Open chat"
-        >
-          <span>💬</span>
-          {session?.messages && Object.keys(session.messages).length > lastMessageCountRef.current && (
-            <span className="chat-badge" />
-          )}
-        </button>
-      )}
-
       {/* In-App Messaging Overlay Panel */}
       {chatOpen && (
         <div className="chat-drawer">
@@ -387,6 +373,9 @@ export default function Track() {
           transitMode={session?.transitMode || 'driving'}
           onTransitModeChange={(mode) => updateTransitMode(sessionId, mode)}
           onPing={handleTriggerPing}
+          chatOpen={chatOpen}
+          onChatOpen={() => setChatOpen(true)}
+          hasNewMessages={session?.messages && Object.keys(session.messages).length > lastMessageCountRef.current}
         />
       )}
     </div>
