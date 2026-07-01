@@ -254,7 +254,7 @@ export default function Home() {
           </div>
 
           {/* Recent Trackers Dashboard */}
-          {recentSessions.length > 0 && (
+          {recentSessions.length > 0 && step !== 'sharing' && (
             <div className="recent-sessions-section">
               <div className="recent-header">
                 <h3>Recent Trackers</h3>

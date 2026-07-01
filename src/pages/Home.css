@@ -101,13 +101,15 @@
   text-align: left;
 }
 
-/* Right Column placement on Grid (Spans both rows to align nicely) */
+/* Right Column Card Container */
 .hero-right {
   grid-column: 2;
   grid-row: 1 / span 2;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 24px;
   width: 100%;
 }
 

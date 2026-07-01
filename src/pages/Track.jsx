@@ -121,18 +121,6 @@ export default function Track() {
     };
   }, []);
 
-  // End session on page unload (sender only)
-  useEffect(() => {
-    if (role !== 'sender' || !sessionId) return;
-
-    const handleUnload = () => {
-      endSession(sessionId).catch(() => {});
-    };
-
-    window.addEventListener('beforeunload', handleUnload);
-    return () => window.removeEventListener('beforeunload', handleUnload);
-  }, [role, sessionId]);
-
   // Save/Update local session history when loaded
   useEffect(() => {
     if (loading || error || !sessionId || !session) return;
