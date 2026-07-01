@@ -15,16 +15,13 @@ export default function Home() {
   const [shareLink, setShareLink] = useState('');
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
-  const [recentSessions, setRecentSessions] = useState([]);
-
-  // Load recent trackers on mount
-  useState(() => {
+  const [recentSessions, setRecentSessions] = useState(() => {
     try {
       const recentStr = localStorage.getItem('reachio_recent_sessions');
-      if (recentStr) {
-        setRecentSessions(JSON.parse(recentStr));
-      }
-    } catch (e) {}
+      return recentStr ? JSON.parse(recentStr) : [];
+    } catch (e) {
+      return [];
+    }
   });
 
   const handleClearHistory = useCallback(() => {
