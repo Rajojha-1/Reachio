@@ -15,6 +15,22 @@ export default function Home() {
   const [shareLink, setShareLink] = useState('');
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [recentSessions, setRecentSessions] = useState([]);
+
+  // Load recent trackers on mount
+  useState(() => {
+    try {
+      const recentStr = localStorage.getItem('reachio_recent_sessions');
+      if (recentStr) {
+        setRecentSessions(JSON.parse(recentStr));
+      }
+    } catch (e) {}
+  });
+
+  const handleClearHistory = useCallback(() => {
+    localStorage.removeItem('reachio_recent_sessions');
+    setRecentSessions([]);
+  }, []);
 
   const handleStartSharing = useCallback(async () => {
     setError(null);
@@ -36,6 +52,21 @@ export default function Home() {
           
           // Identify this device as the sender for this session
           localStorage.setItem(`reachio_role_${id}`, 'sender');
+
+          // Save to local history
+          try {
+            const recentStr = localStorage.getItem('reachio_recent_sessions');
+            const recent = recentStr ? JSON.parse(recentStr) : [];
+            const filtered = recent.filter(s => s.id !== id);
+            filtered.unshift({
+              id,
+              role: 'sender',
+              createdAt: Date.now()
+            });
+            const sliced = filtered.slice(0, 5);
+            localStorage.setItem('reachio_recent_sessions', JSON.stringify(sliced));
+            setRecentSessions(sliced);
+          } catch (e) {}
 
           setSessionId(id);
           const link = `${window.location.origin}/track/${id}`;
@@ -221,6 +252,35 @@ export default function Home() {
               </div>
             )}
           </div>
+
+          {/* Recent Trackers Dashboard */}
+          {recentSessions.length > 0 && (
+            <div className="recent-sessions-section">
+              <div className="recent-header">
+                <h3>Recent Trackers</h3>
+                <button className="btn-clear-history" onClick={handleClearHistory}>
+                  Clear
+                </button>
+              </div>
+              <div className="recent-list">
+                {recentSessions.map((s) => (
+                  <div key={s.id} className="recent-item">
+                    <div className="recent-item-meta">
+                      <span className={`recent-role ${s.role}`}>
+                        {s.role === 'sender' ? 'Broadcasting 📡' : 'Tracking 📍'}
+                      </span>
+                      <span className="recent-time">
+                        {new Date(s.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
+                    <a href={`/track/${s.id}`} className="btn btn-recent-go">
+                      Resume →
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
       </div>

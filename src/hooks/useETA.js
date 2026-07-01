@@ -13,7 +13,7 @@ import { smoothValue } from '../lib/distance';
  * @param {number} speed - Current speed in m/s
  * @returns {{ etaSeconds: number|null, etaText: string }}
  */
-export function useETA(origin, destination, distanceMeters, speed = 0) {
+export function useETA(origin, destination, distanceMeters, speed = 0, transitMode = 'driving') {
   const [etaSeconds, setEtaSeconds] = useState(null);
   const [etaText, setEtaText] = useState('--');
   const prevEtaRef = useRef(null);
@@ -31,7 +31,7 @@ export function useETA(origin, destination, distanceMeters, speed = 0) {
       rawEta = speedBasedEta;
     } else {
       // 2. Fallback to API routing ETA (e.g. they are stationary)
-      const routeResult = await fetchRouteETA(origin, destination);
+      const routeResult = await fetchRouteETA(origin, destination, transitMode);
       if (routeResult) {
         rawEta = routeResult.durationSeconds;
       }
@@ -45,7 +45,7 @@ export function useETA(origin, destination, distanceMeters, speed = 0) {
       setEtaSeconds(Math.round(smoothedEta));
       setEtaText(formatETA(Math.round(smoothedEta)));
     }
-  }, [origin, destination, distanceMeters, speed]);
+  }, [origin, destination, distanceMeters, speed, transitMode]);
 
   useEffect(() => {
     // Call asynchronously to avoid setting state during effect execution phase

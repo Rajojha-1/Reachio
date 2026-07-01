@@ -12,6 +12,10 @@ export default function BottomPanel({
   speedText,
   status,
   isOnline,
+  role,
+  transitMode = 'driving',
+  onTransitModeChange,
+  onPing,
 }) {
   const updateFreq = getUpdateFrequencyLabel(status);
   const lastUpdate = getLastUpdateAge();
@@ -22,6 +26,49 @@ export default function BottomPanel({
 
       <div className="panel-header">
         <StatusBadge status={status} />
+        
+        <div className="panel-controls">
+          {/* Transit Mode Selector */}
+          {role === 'sender' ? (
+            <div className="transit-selector">
+              <button 
+                className={`transit-btn ${transitMode === 'driving' ? 'active' : ''}`}
+                onClick={() => onTransitModeChange('driving')}
+                title="Driving mode"
+              >
+                🚗
+              </button>
+              <button 
+                className={`transit-btn ${transitMode === 'cycling' ? 'active' : ''}`}
+                onClick={() => onTransitModeChange('cycling')}
+                title="Cycling mode"
+              >
+                🚲
+              </button>
+              <button 
+                className={`transit-btn ${transitMode === 'walking' ? 'active' : ''}`}
+                onClick={() => onTransitModeChange('walking')}
+                title="Walking mode"
+              >
+                🚶
+              </button>
+            </div>
+          ) : (
+            <div className="transit-indicator">
+              <span>Traveling by: </span>
+              <strong>
+                {transitMode === 'driving' && '🚗 Driving'}
+                {transitMode === 'cycling' && '🚲 Cycling'}
+                {transitMode === 'walking' && '🚶 Walking'}
+              </strong>
+            </div>
+          )}
+
+          {/* Ping Button */}
+          <button className="btn btn-ping" onClick={onPing} title="Ping friend with alert">
+            🔔 Ping
+          </button>
+        </div>
       </div>
 
       <div className="panel-metrics">

@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, set, onValue, update, get, remove } from 'firebase/database';
+import { getDatabase, ref, set, onValue, update, get, remove, push } from 'firebase/database';
 import { nanoid } from 'nanoid';
 
 const firebaseConfig = {
@@ -155,6 +155,57 @@ export async function getSession(sessionId) {
 export async function endSession(sessionId) {
   const sessionRef = ref(db, `sessions/${sessionId}`);
   await update(sessionRef, { active: false });
+}
+
+/**
+ * Update the session's active transit mode.
+ */
+export async function updateTransitMode(sessionId, mode) {
+  const sessionRef = ref(db, `sessions/${sessionId}`);
+  await update(sessionRef, { transitMode: mode });
+}
+
+/**
+ * Send a haptic/audio ping alert.
+ */
+export async function sendPing(sessionId, role) {
+  const pingRef = ref(db, `sessions/${sessionId}/ping`);
+  await update(pingRef, {
+    [`${role}Time`]: Date.now()
+  });
+}
+
+/**
+ * Send a chat message. Keeps the database clean by pruning to last 20 messages.
+ */
+export async function sendMessage(sessionId, role, text) {
+  const messagesRef = ref(db, `sessions/${sessionId}/messages`);
+  const newMessageRef = push(messagesRef);
+  await set(newMessageRef, {
+    sender: role,
+    text,
+    timestamp: Date.now()
+  });
+
+  // Limit to last 20 messages
+  try {
+    const snapshot = await get(messagesRef);
+    const messages = snapshot.val();
+    if (messages) {
+      const keys = Object.keys(messages);
+      if (keys.length > 20) {
+        keys.sort((a, b) => messages[a].timestamp - messages[b].timestamp);
+        const toDelete = keys.slice(0, keys.length - 20);
+        const prunes = {};
+        toDelete.forEach(k => {
+          prunes[k] = null;
+        });
+        await update(messagesRef, prunes);
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to prune messages:', e);
+  }
 }
 
 /**

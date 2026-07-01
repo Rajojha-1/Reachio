@@ -6,28 +6,38 @@ const MIN_FETCH_INTERVAL = 30_000;
  * Fetch route ETA from OSRM. Used only as a reference, not the final ETA.
  * The actual ETA shown to users is calculated from their real GPS speed.
  */
-export async function fetchRouteETA(origin, destination) {
+export async function fetchRouteETA(origin, destination, transitMode = 'driving') {
   const now = Date.now();
-  if (lastFetchTime > 0 && now - lastFetchTime < MIN_FETCH_INTERVAL) {
-    return cachedRouteETA;
+  const cacheKey = `${origin.lat},${origin.lng}_${destination.lat},${destination.lng}_${transitMode}`;
+  
+  if (lastFetchTime > 0 && now - lastFetchTime < MIN_FETCH_INTERVAL && cachedRouteETA?.key === cacheKey) {
+    return cachedRouteETA.data;
   }
 
   try {
     lastFetchTime = now;
-    const url = `https://router.project-osrm.org/route/v1/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=false`;
+    let profile = 'driving';
+    if (transitMode === 'walking') profile = 'foot';
+    else if (transitMode === 'cycling') profile = 'bicycle';
+
+    const url = `https://router.project-osrm.org/route/v1/${profile}/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=false`;
     const response = await fetch(url);
     const data = await response.json();
 
     if (data.code === 'Ok' && data.routes?.length) {
-      cachedRouteETA = {
+      const result = {
         durationSeconds: Math.round(data.routes[0].duration),
         distanceMeters: Math.round(data.routes[0].distance),
       };
-      return cachedRouteETA;
+      cachedRouteETA = {
+        key: cacheKey,
+        data: result
+      };
+      return result;
     }
     return null;
   } catch {
-    return cachedRouteETA; // Return last cached result on error
+    return cachedRouteETA?.key === cacheKey ? cachedRouteETA.data : null; // Return last cached result on error
   }
 }
 
